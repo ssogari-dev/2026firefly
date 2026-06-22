@@ -273,6 +273,12 @@
       width: 50%;
       cursor: pointer;
       z-index: 5;
+      pointer-events: none;
+    }
+
+    #lightbox-overlay.visible #lb-prev-zone,
+    #lightbox-overlay.visible #lb-next-zone {
+      pointer-events: auto;
     }
 
     #lb-prev-zone { left: 0; }

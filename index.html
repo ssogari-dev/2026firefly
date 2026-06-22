@@ -533,9 +533,24 @@ function shuffle(arr) {
                 for (const [ox, oy] of centers) {
                   if (distSq(cx, cy, ox, oy) < minCardDistSq) { clear = false; break; }
                 }
-                if (clear) { px = gx; py = gy; centers.push([cx, cy]); break outer; }
+                if (clear) { px = gx; py = gy; centers.push([cx, cy]); found = true; break outer; }
               }
             }
+          }
+
+          if (!found) {
+            // 최후의 수단: 빈 자리가 없으면 (0,0)에 쌓지 말고 충돌을 허용해
+            // 화면 전역에 랜덤 분산한다 (중앙 메인 이미지 영역만 회피).
+            const maxX = Math.max(0, W - SZ), maxY = Math.max(0, H - SZ);
+            let x = 0, y = 0;
+            for (let t = 0; t < 50; t++) {
+              x = Math.random() * maxX;
+              y = Math.random() * maxY;
+              const cx = x + SZ / 2, cy = y + SZ / 2;
+              if (distSq(cx, cy, vcx, vcy) >= minMainDistSq) break;
+            }
+            px = x; py = y;
+            centers.push([px + SZ / 2, py + SZ / 2]);
           }
 
           placements.push({ x: px, y: py, rot: (Math.random() - 0.5) * 50 });

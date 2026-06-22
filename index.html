@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>반디 2주년 기념카페의 기록</title>
+  <link rel="preload" href="main.png" as="image" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a1a2e;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* ── Notice Modal ── */
+    #notice-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    #notice-overlay.hidden {
+      display: none;
+    }
+
+    #notice-modal {
+      background: #fff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    #notice-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-radius: 12px 12px 0 0;
+    }
+
+    #notice-header h2 {
+      font-size: 15px;
+      color: #888;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    #notice-close {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #aaa;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    #notice-close:hover {
+      color: #333;
+    }
+
+    #notice-list {
+      padding: 8px 0;
+    }
+
+    .notice-item {
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .notice-item:last-child {
+      border-bottom: none;
+    }
+
+    .notice-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: background 0.15s;
+      gap: 8px;
+    }
+
+    .notice-title-row:hover {
+      background: #f8f8f8;
+    }
+
+    .notice-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notice-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      background: #e75480;
+      border-radius: 4px;
+      padding: 1px 6px;
+      letter-spacing: 0.04em;
+      width: fit-content;
+    }
+
+    .notice-title-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #222;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .notice-time {
+      font-size: 12px;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .notice-chevron {
+      font-size: 12px;
+      color: #ccc;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .notice-item.open .notice-chevron {
+      transform: rotate(180deg);
+    }
+
+    .notice-body {
+      display: none;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 0 20px 16px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    .notice-body a {
+      color: #e75480;
+      text-decoration: none;
+    }
+
+    .notice-body a:hover {
+      text-decoration: underline;
+    }
+
+    .notice-sub-content {
+      display: none;
+      padding: 8px 20px 14px;
+      font-size: 11px;
+      color: #bbb;
+      line-height: 1.55;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .notice-item.open .notice-sub-content {
+      display: block;
+    }
+
+    .notice-item.open .notice-body {
+      display: block;
+    }
+
+    /* ── Main image ── */
+    #center-anchor {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
+      pointer-events: none;
+    }
+
+    #main-img {
+      display: block;
+      width: clamp(120px, 22vmin, 280px);
+      height: clamp(120px, 22vmin, 280px);
+      object-fit: contain;
+      filter: drop-shadow(0 4px 28px rgba(0, 0, 0, 0.7));
+    }
+
+    /* ── Scatter container ── */
+    #scatter {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    /* ── Post-it card ── */
+    .postit {
+      position: absolute;
+      cursor: pointer;
+      z-index: 5;
+      contain: layout style;
+    }
+
+    .postit:hover {
+      z-index: 25;
+    }
+
+    .postit img {
+      display: block;
+      width: var(--sz);
+      height: var(--sz);
+      object-fit: cover;
+      border-radius: 3px;
+      box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.45);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .postit:hover img {
+      box-shadow: 4px 6px 18px rgba(0, 0, 0, 0.6);
+      transform: scale(1.06);
+      will-change: transform;
+    }
+
+    /* ── Lightbox ── */
+    #lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    #lightbox-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* 좌/우 탐색 존 — 투명, 전체 높이의 절반 너비, 다이얼로그(z-index auto) 위 */
+    #lb-prev-zone,
+    #lb-next-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    #lb-prev-zone { left: 0; }
+    #lb-next-zone { right: 0; }
+
+    /* wrap은 z-index 없음 → 자식 #lightbox-close의 z-index가 오버레이 컨텍스트에서 평가됨 */
+    #lightbox-wrap {
+      position: relative;
+      width: 100%;
+      max-width: min(460px, 92vw);
+      pointer-events: none;
+    }
+
+    #lightbox {
+      pointer-events: all;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+    }
+
+    #lightbox-img-wrap {
+      flex: 0 0 auto;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-height: 52vh;
+      overflow: hidden;
+    }
+
+    #lightbox-img {
+      max-width: 100%;
+      max-height: 52vh;
+      object-fit: contain;
+      display: block;
+    }
+
+    #lightbox-body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 18px 20px 14px;
+    }
+
+    #lightbox-content {
+      font-size: 15px;
+      color: #222;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    #lightbox-content b {
+      font-weight: 700;
+    }
+
+    #lightbox-content i {
+      font-style: italic;
+    }
+
+    #lightbox-staff-notice {
+      display: none;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      color: #999;
+    }
+
+    /* X버튼: #lightbox-wrap 기준 우상단, z-index:10 → 오버레이 컨텍스트에서 탐색 존(5) 위 */
+    #lightbox-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.55);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: all;
+      transition: background 0.15s;
+    }
+
+    #lightbox-close:hover {
+      background: rgba(0, 0, 0, 0.78);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Notice Modal -->
+  <div id="notice-overlay">
+    <div id="notice-modal">
+      <div id="notice-header">
+        <h2>공지사항</h2>
+        <button id="notice-close" aria-label="닫기">×</button>
+      </div>
+      <div id="notice-list"></div>
+    </div>
+  </div>
+
+  <!-- Fixed center image -->
+  <div id="center-anchor">
+    <img id="main-img" src="main.png" alt="메인 이미지" />
+  </div>
+
+  <!-- Scatter board -->
+  <div id="scatter"></div>
+
+  <!-- Lightbox -->
+  <div id="lightbox-overlay">
+    <!-- wrap 먼저 (z-index auto), 탐색 존 나중 (z-index 5) → 탐색 존이 모달 위에 위치 -->
+    <!-- X버튼은 wrap 안에서 z-index:10 → 오버레이 컨텍스트 기준 탐색 존(5)보다 높음 -->
+    <div id="lightbox-wrap">
+      <button id="lightbox-close" aria-label="닫기">×</button>
+      <div id="lightbox">
+        <div id="lightbox-img-wrap">
+          <img id="lightbox-img" src="" alt="" />
+        </div>
+        <div id="lightbox-body">
+          <div id="lightbox-content"></div>
+          <div id="lightbox-staff-notice">스태프에 의해 일부 표현이 수정되었습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div id="lb-prev-zone"></div>
+    <div id="lb-next-zone"></div>
+  </div>
+
+  <script>
+    (async () => {
+function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      /* ── Notice ── */
+      async function loadNotice() {
+        const notices = await fetch('notice.json').then(r => r.json());
+        notices.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        const list = document.getElementById('notice-list');
+        notices.forEach((n, i) => {
+          const item = document.createElement('div');
+          item.className = 'notice-item';
+          const timeStr = new Date(n.time).toLocaleString('ko-KR', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+          });
+          item.innerHTML = `
+        <div class="notice-title-row">
+          <div class="notice-title-wrap">
+            <span class="notice-title-text">${n.title}</span>
+            <span class="notice-time">${timeStr}</span>
+          </div>
+          <span class="notice-chevron">▼</span>
+        </div>
+        <div class="notice-body">${n.content}</div>
+        ${n['sub-content'] ? `<div class="notice-sub-content">${n['sub-content']}</div>` : ''}
+      `;
+          item.querySelector('.notice-title-row').addEventListener('click', () => {
+            const wasOpen = item.classList.contains('open');
+            list.querySelectorAll('.notice-item.open').forEach(el => el.classList.remove('open'));
+            if (!wasOpen) item.classList.add('open');
+          });
+          if (n.title === '행사에 와주신 모든 분들께') item.classList.add('open');
+          list.appendChild(item);
+        });
+
+        const overlay = document.getElementById('notice-overlay');
+        document.getElementById('notice-close').addEventListener('click', () => overlay.classList.add('hidden'));
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.add('hidden'); });
+      }
+
+      /* ── Board ── */
+      let shuffledItems = [];
+      let lightboxItems = [];   // main.png(0번) + shuffledItems
+      let currentLbIdx = 0;
+
+      const scatter = document.getElementById('scatter');
+
+      function placeCards() {
+        scatter.innerHTML = '';
+
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        const N = shuffledItems.length;
+        if (!N) return;
+
+        const mainSz = Math.min(280, Math.max(120, 0.22 * Math.min(W, H)));
+        const SZ = Math.max(30, Math.floor(Math.sqrt(0.48 * W * H / N)));
+        const minCardDist = SZ * 1.08;
+        const minCardDistSq = minCardDist * minCardDist;
+        const minMainDist = mainSz / 2 + SZ * 0.7 + 18;
+        const minMainDistSq = minMainDist * minMainDist;
+        const vcx = W / 2, vcy = H / 2;
+        const distSq = (ax, ay, bx, by) => (ax - bx) ** 2 + (ay - by) ** 2;
+
+        const centers = [];
+        const placements = [];
+
+        for (let i = 0; i < N; i++) {
+          let px = 0, py = 0, found = false;
+
+          for (let t = 0; t < 600 && !found; t++) {
+            const x  = Math.random() * (W - SZ);
+            const y  = Math.random() * (H - SZ);
+            const cx = x + SZ / 2, cy = y + SZ / 2;
+            if (distSq(cx, cy, vcx, vcy) < minMainDistSq) continue;
+            let clear = true;
+            for (const [ox, oy] of centers) {
+              if (distSq(cx, cy, ox, oy) < minCardDistSq) { clear = false; break; }
+            }
+            if (!clear) continue;
+            px = x; py = y;
+            centers.push([cx, cy]);
+            found = true;
+          }
+
+          if (!found) {
+            const step = Math.ceil(SZ * 0.9);
+            const startX = Math.floor(Math.random() * step);
+            const startY = Math.floor(Math.random() * step);
+            outer: for (let gi = 0; gi * step < W + step; gi++) {
+              for (let gj = 0; gj * step < H + step; gj++) {
+                const gx = (startX + gi * step) % Math.max(1, W - SZ);
+                const gy = (startY + gj * step) % Math.max(1, H - SZ);
+                const cx = gx + SZ / 2, cy = gy + SZ / 2;
+                if (distSq(cx, cy, vcx, vcy) < minMainDistSq) continue;
+                let clear = true;
+                for (const [ox, oy] of centers) {
+                  if (distSq(cx, cy, ox, oy) < minCardDistSq) { clear = false; break; }
+                }
+                if (clear) { px = gx; py = gy; centers.push([cx, cy]); break outer; }
+              }
+            }
+          }
+
+          placements.push({ x: px, y: py, rot: (Math.random() - 0.5) * 50 });
+        }
+
+        const frag = document.createDocumentFragment();
+        shuffledItems.forEach((item, idx) => {
+          const { x, y, rot } = placements[idx];
+          const el = document.createElement('div');
+          el.className = 'postit';
+          el.dataset.idx = idx;
+          el.style.cssText = `--sz:${SZ}px;left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;transform:rotate(${rot.toFixed(1)}deg)`;
+          const img = document.createElement('img');
+          img.src = 'images/' + item.filename;
+          img.alt = '';
+          img.decoding = 'async';
+          img.draggable = false;
+          el.appendChild(img);
+          frag.appendChild(el);
+        });
+        scatter.appendChild(frag);
+      }
+
+      async function loadBoard() {
+        const items = await fetch('transcriptions.json').then(r => r.json());
+        shuffledItems = shuffle(items);
+        lightboxItems = [
+          { path: 'main.png', content: '', isModifiedByStaff: false },
+          ...shuffledItems.map(it => ({ ...it, path: 'images/' + it.filename }))
+        ];
+
+        scatter.addEventListener('click', e => {
+          const card = e.target.closest('.postit');
+          if (card) openLightbox(parseInt(card.dataset.idx, 10) + 1);
+        });
+
+        placeCards();
+      }
+
+      // Debounced resize — skip small height changes (mobile address bar hide/show)
+      let resizeTimer;
+      let lastResizeW = 0, lastResizeH = 0;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          const W = window.innerWidth, H = window.innerHeight;
+          if (Math.abs(W - lastResizeW) > 50 || Math.abs(H - lastResizeH) > 100) {
+            lastResizeW = W; lastResizeH = H;
+            placeCards();
+          }
+        }, 350);
+      });
+
+      /* ── Lightbox ── */
+      const lbOverlay = document.getElementById('lightbox-overlay');
+      const lbImg = document.getElementById('lightbox-img');
+      const lbContent = document.getElementById('lightbox-content');
+      const lbStaff = document.getElementById('lightbox-staff-notice');
+
+      function openLightbox(idx) {
+        const len = lightboxItems.length;
+        currentLbIdx = ((idx % len) + len) % len;
+        renderLightbox();
+        lbOverlay.classList.add('visible');
+      }
+
+      function renderLightbox() {
+        const item = lightboxItems[currentLbIdx];
+        lbImg.src = item.path;
+        lbContent.innerHTML = item.content || '';
+        lbStaff.style.display = item.isModifiedByStaff ? 'block' : 'none';
+        document.getElementById('lightbox-body').scrollTop = 0;
+      }
+
+      function navigate(delta) {
+        const len = lightboxItems.length;
+        currentLbIdx = (currentLbIdx + delta + len) % len;
+        renderLightbox();
+      }
+
+      function closeLightbox() { lbOverlay.classList.remove('visible'); }
+
+      document.getElementById('lightbox-close').addEventListener('click', e => { e.stopPropagation(); closeLightbox(); });
+      document.getElementById('lb-prev-zone').addEventListener('click', () => navigate(-1));
+      document.getElementById('lb-next-zone').addEventListener('click', () => navigate(+1));
+
+      document.addEventListener('keydown', e => {
+        if (!lbOverlay.classList.contains('visible')) return;
+        if (e.key === 'Escape') closeLightbox();
+        else if (e.key === 'ArrowLeft') navigate(-1);
+        else if (e.key === 'ArrowRight') navigate(+1);
+      });
+
+      // Touch swipe
+      let touchStartX = 0;
+      lbOverlay.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      lbOverlay.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) navigate(dx < 0 ? 1 : -1);
+      });
+
+      await Promise.all([loadNotice(), loadBoard()]);
+    })();
+  </script>
+</body>
+
+</html>

@@ -7,6 +7,7 @@
   <title>반디 2주년 기념카페의 기록</title>
   <link rel="preload" href="main.webp" as="image" />
   <style>
+    /* 디자인은 땡쓰 투 클로드 */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -288,8 +289,13 @@
       pointer-events: auto;
     }
 
-    #lb-prev-zone { left: 0; }
-    #lb-next-zone { right: 0; }
+    #lb-prev-zone {
+      left: 0;
+    }
+
+    #lb-next-zone {
+      right: 0;
+    }
 
     /* wrap은 z-index 없음 → 자식 #lightbox-close의 z-index가 오버레이 컨텍스트에서 평가됨 */
     #lightbox-wrap {
@@ -427,7 +433,7 @@
 
   <script>
     (async () => {
-function shuffle(arr) {
+      function shuffle(arr) {
         const a = arr.slice();
         for (let i = a.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
@@ -505,8 +511,8 @@ function shuffle(arr) {
           let px = 0, py = 0, found = false;
 
           for (let t = 0; t < 600 && !found; t++) {
-            const x  = Math.random() * (W - SZ);
-            const y  = Math.random() * (H - SZ);
+            const x = Math.random() * (W - SZ);
+            const y = Math.random() * (H - SZ);
             const cx = x + SZ / 2, cy = y + SZ / 2;
             if (distSq(cx, cy, vcx, vcy) < minMainDistSq) continue;
             let clear = true;
